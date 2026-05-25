@@ -20,13 +20,22 @@ def create_attendance(
     current_user: User = Depends(get_current_user)
 ):
     """Mark attendance for a worker"""
-    if current_user.role not in ["admin", "manager", "supervisor"]:
+    # Allow admin, manager, supervisor, AND employee to create their own attendance
+    if current_user.role not in ["admin", "manager", "supervisor", "employee"]:
         raise HTTPException(status_code=403, detail="Not authorized to mark attendance")
+    
+    # If user is employee, they can only mark their own attendance
+    if current_user.role == "employee":
+        # Get worker record for this employee
+        worker = db.query(Worker).filter(Worker.email == current_user.email).first()
+        if not worker or worker.id != attendance_data.worker_id:
+            raise HTTPException(status_code=403, detail="You can only mark your own attendance")
     
     worker = db.query(Worker).filter(Worker.id == attendance_data.worker_id).first()
     if not worker:
         raise HTTPException(status_code=404, detail="Worker not found")
     
+    # Check if attendance already exists for this date
     existing = db.query(Attendance).filter(
         Attendance.worker_id == attendance_data.worker_id,
         Attendance.attendance_date == attendance_data.attendance_date
@@ -54,6 +63,12 @@ def get_all_attendance(
     """Get attendance records with filters"""
     query = db.query(Attendance)
     
+    # If employee, only show their own attendance
+    if current_user.role == "employee":
+        worker = db.query(Worker).filter(Worker.email == current_user.email).first()
+        if worker:
+            query = query.filter(Attendance.worker_id == worker.id)
+    
     if worker_id:
         query = query.filter(Attendance.worker_id == worker_id)
     if start_date:
@@ -73,6 +88,13 @@ def get_attendance(
     attendance = db.query(Attendance).filter(Attendance.id == attendance_id).first()
     if not attendance:
         raise HTTPException(status_code=404, detail="Attendance record not found")
+    
+    # If employee, check if it's their own record
+    if current_user.role == "employee":
+        worker = db.query(Worker).filter(Worker.email == current_user.email).first()
+        if not worker or attendance.worker_id != worker.id:
+            raise HTTPException(status_code=403, detail="Access denied")
+    
     return attendance
 
 @router.get("/worker/{worker_id}")
@@ -84,6 +106,12 @@ def get_worker_attendance(
     current_user: User = Depends(get_current_user)
 ):
     """Get attendance for a specific worker"""
+    # If employee, only allow viewing their own
+    if current_user.role == "employee":
+        worker = db.query(Worker).filter(Worker.email == current_user.email).first()
+        if not worker or worker.id != worker_id:
+            raise HTTPException(status_code=403, detail="You can only view your own attendance")
+    
     worker = db.query(Worker).filter(Worker.id == worker_id).first()
     if not worker:
         raise HTTPException(status_code=404, detail="Worker not found")
@@ -107,12 +135,18 @@ def update_attendance(
     current_user: User = Depends(get_current_user)
 ):
     """Update attendance (check-out, overtime)"""
-    if current_user.role not in ["admin", "manager", "supervisor"]:
-        raise HTTPException(status_code=403, detail="Not authorized to update attendance")
-    
     attendance = db.query(Attendance).filter(Attendance.id == attendance_id).first()
     if not attendance:
         raise HTTPException(status_code=404, detail="Attendance record not found")
+    
+    # If employee, check if it's their own record
+    if current_user.role == "employee":
+        worker = db.query(Worker).filter(Worker.email == current_user.email).first()
+        if not worker or attendance.worker_id != worker.id:
+            raise HTTPException(status_code=403, detail="You can only update your own attendance")
+    
+    if current_user.role not in ["admin", "manager", "supervisor", "employee"]:
+        raise HTTPException(status_code=403, detail="Not authorized to update attendance")
     
     for key, value in attendance_data.model_dump(exclude_unset=True).items():
         setattr(attendance, key, value)

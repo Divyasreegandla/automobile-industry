@@ -4,28 +4,26 @@ from sqlalchemy import or_
 from typing import List, Optional
 from datetime import date
 from app.database import get_db
-from app.models.worker import Worker
+from app.models.worker import Worker, EmploymentStatus, ShiftType
 from app.models.department import Department
+from app.models.user import User  # Add this import
 from app.schemas.worker import (
     WorkerCreate, WorkerUpdate, WorkerResponse, WorkerWithDepartmentResponse
 )
-from app.core.auth import get_current_user
+from app.core.auth import get_current_user, get_password_hash  # Add get_password_hash
 from app.models.user import User
 import random
 import string
 
 router = APIRouter(prefix="/api/v1/workers", tags=["Workers"])
 
-# Helper function to generate employee code
 def generate_employee_code(db: Session) -> str:
     """Generate unique employee code"""
     while True:
-        # Format: EMP + Year + 6 digit random number
         year = date.today().year
         random_num = ''.join(random.choices(string.digits, k=6))
         employee_code = f"EMP{year}{random_num}"
         
-        # Check if code exists
         existing = db.query(Worker).filter(Worker.employee_code == employee_code).first()
         if not existing:
             return employee_code
@@ -36,12 +34,7 @@ def create_worker(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """
-    Create a new worker/employee
-    
-    - **Requires**: Admin or Manager role
-    - **Auto-generates**: Unique employee code
-    """
+    """Create a new worker/employee and automatically create user account"""
     if current_user.role not in ["admin", "manager"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -56,7 +49,7 @@ def create_worker(
             detail=f"Department with id {worker_data.department_id} not found"
         )
     
-    # Check if email already exists
+    # Check if email already exists in workers
     if worker_data.email:
         existing_email = db.query(Worker).filter(Worker.email == worker_data.email).first()
         if existing_email:
@@ -89,6 +82,26 @@ def create_worker(
     db.commit()
     db.refresh(new_worker)
     
+    # ALSO CREATE USER ACCOUNT FOR LOGIN
+    if worker_data.email:
+        # Check if user already exists
+        existing_user = db.query(User).filter(User.email == worker_data.email).first()
+        if not existing_user:
+            # Create user account with default password "string"
+            default_password = "string"
+            hashed_password = get_password_hash(default_password)
+            
+            new_user = User(
+                full_name=worker_data.full_name,
+                email=worker_data.email,
+                password_hash=hashed_password,
+                role="employee",
+                is_active=True
+            )
+            db.add(new_user)
+            db.commit()
+            print(f"✅ User account created for {worker_data.email} with password: {default_password}")
+    
     return new_worker
 
 @router.get("/", response_model=List[WorkerResponse])
@@ -102,19 +115,9 @@ def get_all_workers(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """
-    Get all workers with pagination, search, and filters
-    
-    - **skip**: Number of records to skip
-    - **limit**: Maximum records to return (1-1000)
-    - **search**: Search by name, email, or employee code
-    - **department_id**: Filter by department
-    - **status**: Filter by employment status
-    - **shift_type**: Filter by shift type
-    """
+    """Get all workers with pagination, search, and filters"""
     query = db.query(Worker)
     
-    # Apply search
     if search:
         query = query.filter(
             or_(
@@ -125,7 +128,6 @@ def get_all_workers(
             )
         )
     
-    # Apply filters
     if department_id:
         query = query.filter(Worker.department_id == department_id)
     if status:
@@ -142,9 +144,7 @@ def get_worker(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """
-    Get worker by ID with department details
-    """
+    """Get worker by ID with department details"""
     worker = db.query(Worker).filter(Worker.id == worker_id).first()
     if not worker:
         raise HTTPException(
@@ -152,7 +152,6 @@ def get_worker(
             detail=f"Worker with id {worker_id} not found"
         )
     
-    # Add department and factory names
     response = WorkerWithDepartmentResponse.model_validate(worker)
     if worker.department:
         response.department_name = worker.department.department_name
@@ -167,9 +166,7 @@ def get_worker_by_code(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """
-    Get worker by employee code
-    """
+    """Get worker by employee code"""
     worker = db.query(Worker).filter(Worker.employee_code == employee_code).first()
     if not worker:
         raise HTTPException(
@@ -185,11 +182,7 @@ def update_worker(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """
-    Update worker details
-    
-    - **Requires**: Admin or Manager role
-    """
+    """Update worker details"""
     if current_user.role not in ["admin", "manager"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -207,7 +200,6 @@ def update_worker(
     if worker_data.full_name:
         worker.full_name = worker_data.full_name
     if worker_data.email:
-        # Check if email is taken by another worker
         existing = db.query(Worker).filter(
             Worker.email == worker_data.email,
             Worker.id != worker_id
@@ -218,6 +210,14 @@ def update_worker(
                 detail="Email already used by another worker"
             )
         worker.email = worker_data.email
+        
+        # Also update user account email
+        user = db.query(User).filter(User.email == worker.email).first()
+        if user:
+            user.email = worker_data.email
+            user.full_name = worker_data.full_name or worker.full_name
+            db.commit()
+    
     if worker_data.phone:
         worker.phone = worker_data.phone
     if worker_data.address:
@@ -225,7 +225,6 @@ def update_worker(
     if worker_data.designation:
         worker.designation = worker_data.designation
     if worker_data.department_id:
-        # Check if department exists
         department = db.query(Department).filter(Department.id == worker_data.department_id).first()
         if not department:
             raise HTTPException(
@@ -254,9 +253,7 @@ def delete_worker(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """
-    Delete a worker (Admin only)
-    """
+    """Delete a worker (Admin only)"""
     if current_user.role != "admin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -270,6 +267,12 @@ def delete_worker(
             detail=f"Worker with id {worker_id} not found"
         )
     
+    # Also delete associated user account if exists
+    if worker.email:
+        user = db.query(User).filter(User.email == worker.email).first()
+        if user:
+            db.delete(user)
+    
     db.delete(worker)
     db.commit()
     return None
@@ -282,9 +285,7 @@ def get_workers_by_department(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """
-    Get all workers in a specific department
-    """
+    """Get all workers in a specific department"""
     department = db.query(Department).filter(Department.id == department_id).first()
     if not department:
         raise HTTPException(
