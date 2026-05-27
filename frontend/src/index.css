@@ -18,7 +18,7 @@
   }
   
   .btn-secondary {
-    @apply bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2.5 px-5 rounded-lg transition-all duration-200;
+    @apply bg-gray-200 hover:bg-gray-300 text-gray-800 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white font-medium py-2.5 px-5 rounded-lg transition-all duration-200;
   }
   
   .btn-danger {
@@ -26,7 +26,7 @@
   }
   
   .input-field {
-    @apply w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white;
+    @apply w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white;
   }
   
   .label {
@@ -34,7 +34,7 @@
   }
   
   .table-header {
-    @apply px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider;
+    @apply px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider;
   }
   
   .table-cell {
@@ -46,14 +46,76 @@
   }
   
   .status-active {
-    @apply bg-green-100 text-green-800;
+    @apply bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300;
   }
   
   .status-pending {
-    @apply bg-yellow-100 text-yellow-800;
+    @apply bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300;
   }
   
   .status-inactive {
-    @apply bg-red-100 text-red-800;
+    @apply bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300;
   }
+
+  /* Progress bar dark mode */
+  .progress-bar {
+    @apply bg-gray-200 dark:bg-gray-700 rounded-full;
+  }
+
+  .progress-fill {
+    @apply bg-blue-500 dark:bg-blue-400 rounded-full;
+  }
+}
+
+/* Dark mode specific overrides */
+.dark .card {
+  @apply bg-gray-800 border-gray-700;
+}
+
+.dark .bg-gray-50 {
+  background-color: rgb(31 41 55);
+}
+
+.dark .divide-gray-200 {
+  border-color: rgb(55 65 81);
+}
+
+.dark .border-gray-200 {
+  border-color: rgb(55 65 81);
+}
+
+.dark .text-gray-600 {
+  color: rgb(156 163 175);
+}
+
+.dark .text-gray-500 {
+  color: rgb(107 114 128);
+}
+
+.dark .bg-gray-100 {
+  background-color: rgb(31 41 55);
+}
+
+.dark .hover\:bg-gray-50:hover {
+  background-color: rgb(31 41 55);
+}
+
+/* Chart text colors for dark mode */
+.dark .recharts-text {
+  fill: #e5e7eb !important;
+}
+
+.dark .recharts-cartesian-grid-horizontal line,
+.dark .recharts-cartesian-grid-vertical line {
+  stroke: #374151 !important;
+}
+
+.dark .recharts-legend-item-text {
+  color: #e5e7eb !important;
+}
+
+.dark .recharts-tooltip-wrapper {
+  background-color: #1f2937 !important;
+  border-color: #374151 !important;
+  color: #e5e7eb !important;
 }

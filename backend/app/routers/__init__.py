@@ -19,8 +19,16 @@ from app.routers.inventory_transaction import router as inventory_transaction_ro
 from app.routers.reports import router as reports_router
 from app.routers.safety_incident import router as safety_incident_router
 from app.routers.iot_monitoring import router as iot_monitoring_router
-
 from app.routers.ai_prediction import router as ai_prediction_router
+from app.routers.showroom import router as showroom_router
+from app.routers.dealer import router as dealer_router
+from app.routers.vehicle_model import router as vehicle_model_router
+from app.routers.customer import router as customer_router
+from app.routers.booking import router as booking_router
+from app.routers.sale import router as sale_router
+from app.routers.delivery import router as delivery_router
+from app.routers.sales_analytics import router as sales_analytics_router
+from app.routers.target import router as target_router
 
 __all__ = [
     "auth_router", 
@@ -44,5 +52,15 @@ __all__ = [
     "reports_router",
     "safety_incident_router",
     "iot_monitoring_router",
-    "ai_prediction_router"
+    "ai_prediction_router",
+    "showroom_router",
+    "dealer_router", 
+    "vehicle_model_router",
+    "customer_router",
+    "booking_router",
+    "sale_router",
+    "delivery_router",
+    "sales_analytics_router",
+    "target_router"
+
 ]

@@ -58,6 +58,13 @@ from app.schemas.inventory_transaction import (
 from app.schemas.safety_incident import (
     SafetyIncidentCreate, SafetyIncidentUpdate, SafetyIncidentResponse
 )
+from app.schemas.customer import CustomerCreate, CustomerUpdate, CustomerResponse
+from app.schemas.vehicle_booking import VehicleBookingCreate, VehicleBookingUpdate, VehicleBookingResponse
+from app.schemas.vehicle_sale import VehicleSaleBase,VehicleSaleCreate,VehicleSaleResponse,VehicleSaleUpdate
+from app.schemas.sales_target import SalesTargetCreate, SalesTargetUpdate, SalesTargetResponse
+from app.schemas.regional_sales_report import RegionalSalesReportCreate, RegionalSalesReportUpdate, RegionalSalesReportResponse
+
+
 __all__ = [
     "UserCreate", "LoginRequest", "TokenResponse", "UserResponse",
     "FactoryCreate", "FactoryUpdate", "FactoryResponse", "FactoryWithDepartmentsResponse",
@@ -78,5 +85,11 @@ __all__ = [
     "FactoryExpenseCreate", "FactoryExpenseUpdate", "FactoryExpenseResponse",
     "WarehouseCreate", "WarehouseUpdate", "WarehouseResponse",
     "InventoryTransactionCreate","InventoryTransactionUpdate", "InventoryTransactionResponse",
-    "SafetyIncidentCreate", "SafetyIncidentUpdate", "SafetyIncidentResponse"
+    "SafetyIncidentCreate", "SafetyIncidentUpdate", "SafetyIncidentResponse",
+    "CustomerCreate", "CustomerUpdate", "CustomerResponse",
+    "VehicleBookingCreate", "VehicleBookingUpdate", "VehicleBookingResponse",
+    "VehicleSaleBase","VehicleSaleCreate","VehicleSaleResponse","VehicleSaleUpdate"
+    "SalesTargetCreate", "SalesTargetUpdate", "SalesTargetResponse",
+    "RegionalSalesReportCreate", "RegionalSalesReportUpdate", "RegionalSalesReportResponse"
+    
 ]

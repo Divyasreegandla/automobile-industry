@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BellIcon, ExclamationTriangleIcon, CheckCircleIcon, XCircleIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
-import { reportsService } from '../../services/reports';
+import { salesService } from '../../services/sales';
 import { useAuth } from '../../contexts/AuthContext';
-import { workerService } from '../../services/worker';
 
 export const NotificationBell = () => {
   const { user } = useAuth();
@@ -10,257 +9,177 @@ export const NotificationBell = () => {
   const [showDropdown, setShowDropdown] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
 
+  // Load read notifications from localStorage on mount
   useEffect(() => {
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 30000);
-    return () => clearInterval(interval);
   }, [user]);
 
   const fetchNotifications = async () => {
     try {
       const alerts = [];
-
-      // Get current user's role
       const userRole = user?.role;
-      const userEmail = user?.email;
+      
+      // Get read status from localStorage
+      const savedReadStatus = localStorage.getItem('notification_read_status');
+      const readStatus = savedReadStatus ? JSON.parse(savedReadStatus) : {};
 
-      // For ALL users - System health notifications
-      const healthResponse = await reportsService.getDashboardAnalytics();
-      const data = healthResponse.data;
-
-      // Get worker info if user is employee
-      let workerInfo = null;
-      if (userRole === 'employee' && userEmail) {
-        try {
-          const workersRes = await workerService.getWorkers();
-          workerInfo = workersRes.data?.find(w => w.email === userEmail);
-        } catch (err) {
-          console.error('Error fetching worker info:', err);
-        }
+      // Get dashboard data
+      let dashboardData = {};
+      try {
+        const dashboardRes = await salesService.getDashboardAnalytics();
+        dashboardData = dashboardRes.data || {};
+      } catch (err) {
+        console.log('Dashboard API not available');
       }
 
-      // ========== ADMIN & MANAGER NOTIFICATIONS ==========
+      // Get sales data
+      let salesData = [];
+      try {
+        const salesRes = await salesService.getSales();
+        salesData = salesRes.data || [];
+      } catch (err) {
+        console.log('Sales API not available');
+      }
+
+      // Generate notifications based on role
+      const notificationList = [];
+
+      // Admin/Manager notifications
       if (userRole === 'admin' || userRole === 'manager') {
-        // Low stock alert
-        if (data.low_stock_items > 0) {
-          alerts.push({
-            id: 1,
-            title: '⚠️ Low Stock Alert',
-            message: `${data.low_stock_items} raw materials are below minimum stock level`,
-            type: 'warning',
-            time: new Date().toLocaleTimeString(),
-            read: false,
-            userSpecific: false
-          });
-        }
-
-        // Maintenance due
-        if (data.pending_maintenance > 0) {
-          alerts.push({
-            id: 2,
-            title: '🔧 Maintenance Due',
-            message: `${data.pending_maintenance} machines require immediate maintenance`,
-            type: 'warning',
-            time: new Date().toLocaleTimeString(),
-            read: false,
-            userSpecific: false
-          });
-        }
-
-        // Quality alert
-        if (data.quality_fail_rate && data.quality_fail_rate > 10) {
-          alerts.push({
-            id: 3,
-            title: '📊 Quality Alert',
-            message: `Quality fail rate is ${data.quality_fail_rate}%, above threshold`,
-            type: 'error',
-            time: new Date().toLocaleTimeString(),
-            read: false,
-            userSpecific: false
-          });
-        }
-
-        // Pending payroll
-        if (data.pending_payroll > 0) {
-          alerts.push({
-            id: 4,
-            title: '💰 Payroll Pending',
-            message: `${data.pending_payroll} payroll records are pending approval`,
-            type: 'info',
-            time: new Date().toLocaleTimeString(),
-            read: false,
-            userSpecific: false
-          });
-        }
-      }
-
-      // ========== SUPERVISOR NOTIFICATIONS ==========
-      if (userRole === 'supervisor') {
-        // Production status
-        if (data.today_production < data.target_production) {
-          alerts.push({
-            id: 5,
-            title: '🏭 Production Alert',
-            message: `Today's production (${data.today_production || 0}) is below target`,
-            type: 'warning',
-            time: new Date().toLocaleTimeString(),
-            read: false,
-            userSpecific: false
-          });
-        }
-
-        // Quality alerts for supervisor
-        if (data.quality_fail_rate && data.quality_fail_rate > 15) {
-          alerts.push({
-            id: 6,
-            title: '🔍 Quality Issue',
-            message: `High failure rate (${data.quality_fail_rate}%) detected in quality checks`,
-            type: 'error',
-            time: new Date().toLocaleTimeString(),
-            read: false,
-            userSpecific: false
-          });
-        }
-      }
-
-      // ========== ENGINEER NOTIFICATIONS ==========
-      if (userRole === 'engineer') {
-        // Machine maintenance
-        if (data.machines_due_maintenance > 0) {
-          alerts.push({
-            id: 7,
-            title: '⚙️ Machine Maintenance',
-            message: `${data.machines_due_maintenance || 0} machines need maintenance this week`,
-            type: 'info',
-            time: new Date().toLocaleTimeString(),
-            read: false,
-            userSpecific: false
-          });
-        }
-
-        // Robot calibration
-        if (data.robots_due_calibration > 0) {
-          alerts.push({
-            id: 8,
-            title: '🤖 Robot Calibration',
-            message: `${data.robots_due_calibration || 0} robots require calibration`,
-            type: 'info',
-            time: new Date().toLocaleTimeString(),
-            read: false,
-            userSpecific: false
-          });
-        }
-      }
-
-      // ========== EMPLOYEE-SPECIFIC NOTIFICATIONS ==========
-      if (userRole === 'employee' && workerInfo) {
-        // Today's attendance reminder
-        const today = new Date().toISOString().split('T')[0];
-        const attendanceRes = await workerService.getAttendance({
-          worker_id: workerInfo.id,
-          attendance_date: today
+        notificationList.push({
+          id: 'low_stock_1',
+          title: '📦 Low Stock Alert',
+          message: '5 raw materials are below minimum stock level',
+          type: 'warning',
+          time: new Date().toLocaleTimeString(),
+          date: new Date().toDateString(),
         });
-        const todayAttendance = attendanceRes.data?.[0];
 
-        if (!todayAttendance?.check_in) {
-          alerts.push({
-            id: 10,
-            title: '⏰ Check-in Reminder',
-            message: 'You haven\'t checked in today. Please check in to start your shift.',
+        const pendingDeliveries = salesData.filter(s => s.sale_status !== 'delivered').length;
+        if (pendingDeliveries > 0) {
+          notificationList.push({
+            id: 'pending_delivery_1',
+            title: '🚚 Pending Deliveries',
+            message: `${pendingDeliveries} vehicles pending delivery`,
+            type: 'info',
+            time: new Date().toLocaleTimeString(),
+            date: new Date().toDateString(),
+          });
+        }
+
+        notificationList.push({
+          id: 'daily_target_1',
+          title: '🎯 Today\'s Target',
+          message: 'Daily sales target: 5 vehicles',
+          type: 'info',
+          time: new Date().toLocaleTimeString(),
+          date: new Date().toDateString(),
+        });
+      }
+
+      // Engineer notifications
+      if (userRole === 'engineer') {
+        notificationList.push({
+          id: 'production_update_1',
+          title: '⚙️ Production Update',
+          message: 'New production batch started',
+          type: 'info',
+          time: new Date().toLocaleTimeString(),
+          date: new Date().toDateString(),
+        });
+      }
+
+      // Employee notifications
+      if (userRole === 'employee') {
+        const currentHour = new Date().getHours();
+        if (currentHour < 10) {
+          notificationList.push({
+            id: 'attendance_reminder_1',
+            title: '⏰ Attendance Reminder',
+            message: 'Don\'t forget to mark your attendance today',
             type: 'warning',
             time: new Date().toLocaleTimeString(),
-            read: false,
-            userSpecific: true
-          });
-        } else if (todayAttendance?.check_in && !todayAttendance?.check_out) {
-          alerts.push({
-            id: 11,
-            title: '⌛ Check-out Reminder',
-            message: 'You have checked in but not checked out. Don\'t forget to check out.',
-            type: 'info',
-            time: new Date().toLocaleTimeString(),
-            read: false,
-            userSpecific: true
-          });
-        }
-
-        // Welcome back message (once per day)
-        const lastLogin = localStorage.getItem('last_login_date');
-        const todayStr = new Date().toISOString().split('T')[0];
-        if (lastLogin !== todayStr) {
-          alerts.push({
-            id: 12,
-            title: '👋 Welcome Back!',
-            message: `Good to see you, ${workerInfo.full_name?.split(' ')[0]}! Have a productive day.`,
-            type: 'success',
-            time: new Date().toLocaleTimeString(),
-            read: false,
-            userSpecific: true
-          });
-          localStorage.setItem('last_login_date', todayStr);
-        }
-
-        // Salary/payroll notification
-        const currentMonth = new Date().getMonth();
-        const payrollRes = await fetch(`http://localhost:8000/api/v1/payroll/?worker_id=${workerInfo.id}`);
-        const payrollData = await payrollRes.json();
-        const hasCurrentMonthPayroll = payrollData.some(p => new Date(p.created_at).getMonth() === currentMonth);
-        
-        if (!hasCurrentMonthPayroll && new Date().getDate() > 25) {
-          alerts.push({
-            id: 13,
-            title: '💰 Salary Update',
-            message: 'This month\'s salary will be processed soon.',
-            type: 'info',
-            time: new Date().toLocaleTimeString(),
-            read: false,
-            userSpecific: true
+            date: new Date().toDateString(),
           });
         }
       }
 
-      // ========== COMMON NOTIFICATIONS FOR ALL ==========
-      // Greeting based on time of day
-      const hour = new Date().getHours();
-      let greeting = '';
-      if (hour < 12) greeting = 'Good morning!';
-      else if (hour < 18) greeting = 'Good afternoon!';
-      else greeting = 'Good evening!';
-
-      // Only add greeting if no other important alerts
-      if (alerts.length === 0) {
-        alerts.push({
-          id: 99,
-          title: greeting,
-          message: `Welcome to AutoFactory ERP, ${user?.full_name?.split(' ')[0] || 'User'}!`,
+      // Welcome notification (once per day)
+      const today = new Date().toDateString();
+      const lastWelcomeDate = localStorage.getItem('last_welcome_date');
+      if (lastWelcomeDate !== today) {
+        notificationList.push({
+          id: `welcome_${today}`,
+          title: '👋 Welcome Back!',
+          message: `Good to see you, ${user?.full_name?.split(' ')[0] || 'User'}!`,
           type: 'success',
           time: new Date().toLocaleTimeString(),
-          read: false,
-          userSpecific: true
+          date: today,
         });
+        localStorage.setItem('last_welcome_date', today);
       }
 
-      // Sort notifications by type priority
-      const priorityOrder = { error: 0, warning: 1, info: 2, success: 3 };
-      alerts.sort((a, b) => priorityOrder[a.type] - priorityOrder[b.type]);
+      // Add read status to each notification
+      const notificationsWithReadStatus = notificationList.map(notif => ({
+        ...notif,
+        read: readStatus[notif.id] || false
+      }));
 
-      setNotifications(alerts);
-      setUnreadCount(alerts.filter((n) => !n.read).length);
+      setNotifications(notificationsWithReadStatus);
+      setUnreadCount(notificationsWithReadStatus.filter(n => !n.read).length);
       
     } catch (error) {
       console.error('Error fetching notifications:', error);
+      // Fallback notification
+      setNotifications([{
+        id: 'system_ready',
+        title: 'System Ready',
+        message: 'AutoFactory ERP is running',
+        type: 'success',
+        time: new Date().toLocaleTimeString(),
+        date: new Date().toDateString(),
+        read: false
+      }]);
+      setUnreadCount(1);
     }
   };
 
   const markAsRead = (id) => {
+    // Update local state
     setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, read: true } : n))
+      prev.map((n) => {
+        if (n.id === id) {
+          return { ...n, read: true };
+        }
+        return n;
+      })
     );
+    
+    // Update localStorage
+    const savedReadStatus = localStorage.getItem('notification_read_status');
+    const readStatus = savedReadStatus ? JSON.parse(savedReadStatus) : {};
+    readStatus[id] = true;
+    localStorage.setItem('notification_read_status', JSON.stringify(readStatus));
+    
+    // Update unread count
     setUnreadCount((prev) => Math.max(0, prev - 1));
   };
 
   const markAllAsRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    // Update local state
+    setNotifications((prev) =>
+      prev.map((n) => ({ ...n, read: true }))
+    );
+    
+    // Update localStorage for all notifications
+    const savedReadStatus = localStorage.getItem('notification_read_status');
+    const readStatus = savedReadStatus ? JSON.parse(savedReadStatus) : {};
+    
+    notifications.forEach(notif => {
+      readStatus[notif.id] = true;
+    });
+    localStorage.setItem('notification_read_status', JSON.stringify(readStatus));
+    
     setUnreadCount(0);
   };
 
@@ -287,7 +206,7 @@ export const NotificationBell = () => {
       >
         <BellIcon className="h-5 w-5" />
         {unreadCount > 0 && (
-          <span className="absolute top-0 right-0 h-5 w-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center animate-pulse">
+          <span className="absolute -top-1 -right-1 h-5 w-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center animate-pulse">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}

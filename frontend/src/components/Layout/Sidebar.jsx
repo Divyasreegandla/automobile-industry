@@ -18,7 +18,10 @@ import {
   DocumentTextIcon,
   BuildingOfficeIcon,
   UserCircleIcon,
-  CheckCircleIcon
+  CheckCircleIcon,
+  TruckIcon,
+  MapIcon,
+  ClipboardDocumentCheckIcon
 } from '@heroicons/react/24/outline';
 
 export const Sidebar = () => {
@@ -35,52 +38,15 @@ export const Sidebar = () => {
   const getMenuItems = () => {
     const role = user?.role;
     
-    // EMPLOYEE - Only sees Employee Dashboard
+    // EMPLOYEE - Only sees Employee Dashboard and Vehicle Booking
     if (role === 'employee') {
       return [
         { path: '/employee-dashboard', name: 'My Dashboard', icon: HomeIcon },
+        { path: '/vehicle-booking', name: 'Vehicle Booking', icon: ClipboardDocumentCheckIcon },
       ];
     }
     
-    // ADMIN - Full access to everything
-    if (role === 'admin') {
-      return [
-        { path: '/dashboard', name: 'Dashboard', icon: HomeIcon },
-        { path: '/workers', name: 'Workers', icon: UsersIcon },
-        { path: '/admin-attendance', name: 'Attendance', icon: CalendarIcon },
-        { path: '/production', name: 'Production', icon: CogIcon },
-        { path: '/machinery', name: 'Machinery', icon: CogIcon },
-        { path: '/robotics', name: 'Robotics', icon: CpuChipIcon },
-        { path: '/maintenance', name: 'Maintenance', icon: WrenchScrewdriverIcon },
-        { path: '/inventory', name: 'Inventory', icon: CubeIcon },
-        { path: '/warehouse', name: 'Warehouse', icon: BuildingOfficeIcon },
-        { path: '/payroll', name: 'Payroll', icon: CurrencyDollarIcon },
-        { path: '/cost-analysis', name: 'Cost Analysis', icon: ChartBarIcon },
-        { path: '/reports', name: 'Reports', icon: DocumentTextIcon },
-        { path: '/safety', name: 'Safety', icon: ShieldCheckIcon },
-      ];
-    }
-    
-    // MANAGER - Similar to admin but with some restrictions (no delete)
-    if (role === 'manager') {
-      return [
-        { path: '/dashboard', name: 'Dashboard', icon: HomeIcon },
-        { path: '/workers', name: 'Workers', icon: UsersIcon },
-        { path: '/admin-attendance', name: 'Attendance', icon: CalendarIcon },
-        { path: '/production', name: 'Production', icon: CogIcon },
-        { path: '/machinery', name: 'Machinery', icon: CogIcon },
-        { path: '/robotics', name: 'Robotics', icon: CpuChipIcon },
-        { path: '/maintenance', name: 'Maintenance', icon: WrenchScrewdriverIcon },
-        { path: '/inventory', name: 'Inventory', icon: CubeIcon },
-        { path: '/warehouse', name: 'Warehouse', icon: BuildingOfficeIcon },
-        { path: '/payroll', name: 'Payroll', icon: CurrencyDollarIcon },
-        { path: '/cost-analysis', name: 'Cost Analysis', icon: ChartBarIcon },
-        { path: '/reports', name: 'Reports', icon: DocumentTextIcon },
-        { path: '/safety', name: 'Safety', icon: ShieldCheckIcon },
-      ];
-    }
-    
-    // SUPERVISOR - Limited access (production, attendance, quality)
+    // SUPERVISOR - Limited access (production, attendance, quality, sales view only)
     if (role === 'supervisor') {
       return [
         { path: '/dashboard', name: 'Dashboard', icon: HomeIcon },
@@ -88,6 +54,11 @@ export const Sidebar = () => {
         { path: '/production', name: 'Production', icon: CogIcon },
         { path: '/quality', name: 'Quality Control', icon: CheckCircleIcon },
         { path: '/reports', name: 'Reports', icon: DocumentTextIcon },
+        // Sales Module - View Only
+        { path: '/sales-dashboard', name: 'Sales Dashboard', icon: ChartBarIcon },
+        { path: '/sales-monitoring', name: 'Sales Monitoring', icon: ChartBarIcon },
+        { path: '/state-wise-sales', name: 'State-wise Sales', icon: MapIcon },
+        { path: '/monthly-performance', name: 'Monthly Performance', icon: ChartBarIcon },
       ];
     }
     
@@ -100,12 +71,69 @@ export const Sidebar = () => {
         { path: '/maintenance', name: 'Maintenance', icon: WrenchScrewdriverIcon },
         { path: '/production', name: 'Production', icon: CogIcon },
         { path: '/reports', name: 'Reports', icon: DocumentTextIcon },
+        // Sales Module - Limited
+        { path: '/sales-dashboard', name: 'Sales Dashboard', icon: ChartBarIcon },
+        { path: '/sales-monitoring', name: 'Sales Monitoring', icon: ChartBarIcon },
       ];
     }
     
-    // Default fallback
+    // MANAGER - Full access to everything (including Sales Module)
+    if (role === 'manager') {
+      return [
+        // Main ERP Modules
+        { path: '/dashboard', name: 'Dashboard', icon: HomeIcon },
+        { path: '/workers', name: 'Workers', icon: UsersIcon },
+        { path: '/admin-attendance', name: 'Attendance', icon: CalendarIcon },
+        { path: '/production', name: 'Production', icon: CogIcon },
+        { path: '/machinery', name: 'Machinery', icon: CogIcon },
+        { path: '/robotics', name: 'Robotics', icon: CpuChipIcon },
+        { path: '/maintenance', name: 'Maintenance', icon: WrenchScrewdriverIcon },
+        { path: '/inventory', name: 'Inventory', icon: CubeIcon },
+        { path: '/warehouse', name: 'Warehouse', icon: BuildingOfficeIcon },
+        { path: '/payroll', name: 'Payroll', icon: CurrencyDollarIcon },
+        { path: '/cost-analysis', name: 'Cost Analysis', icon: ChartBarIcon },
+        { path: '/reports', name: 'Reports', icon: DocumentTextIcon },
+        { path: '/safety', name: 'Safety', icon: ShieldCheckIcon },
+        // Sales Module - Full Access
+        { path: '/sales-dashboard', name: 'Sales Dashboard', icon: ChartBarIcon },
+        { path: '/showrooms', name: 'Showrooms', icon: BuildingOfficeIcon },
+        { path: '/dealers', name: 'Dealers', icon: UsersIcon },
+        { path: '/vehicle-booking', name: 'Vehicle Booking', icon: ClipboardDocumentCheckIcon },
+        { path: '/sales-monitoring', name: 'Sales Monitoring', icon: ChartBarIcon },
+        { path: '/delivery-tracking', name: 'Delivery Tracking', icon: TruckIcon },
+        { path: '/revenue-analytics', name: 'Revenue Analytics', icon: CurrencyDollarIcon },
+        { path: '/state-wise-sales', name: 'State-wise Sales', icon: MapIcon },
+        { path: '/monthly-performance', name: 'Monthly Performance', icon: ChartBarIcon },
+      ];
+    }
+    
+    // ADMIN - Full access to everything (including Sales Module)
+    // This is the default role
     return [
+      // Main ERP Modules
       { path: '/dashboard', name: 'Dashboard', icon: HomeIcon },
+      { path: '/workers', name: 'Workers', icon: UsersIcon },
+      { path: '/admin-attendance', name: 'Attendance', icon: CalendarIcon },
+      { path: '/production', name: 'Production', icon: CogIcon },
+      { path: '/machinery', name: 'Machinery', icon: CogIcon },
+      { path: '/robotics', name: 'Robotics', icon: CpuChipIcon },
+      { path: '/maintenance', name: 'Maintenance', icon: WrenchScrewdriverIcon },
+      { path: '/inventory', name: 'Inventory', icon: CubeIcon },
+      { path: '/warehouse', name: 'Warehouse', icon: BuildingOfficeIcon },
+      { path: '/payroll', name: 'Payroll', icon: CurrencyDollarIcon },
+      { path: '/cost-analysis', name: 'Cost Analysis', icon: ChartBarIcon },
+      { path: '/reports', name: 'Reports', icon: DocumentTextIcon },
+      { path: '/safety', name: 'Safety', icon: ShieldCheckIcon },
+      // Sales Module - Full Access
+      { path: '/sales-dashboard', name: 'Sales Dashboard', icon: ChartBarIcon },
+      { path: '/showrooms', name: 'Showrooms', icon: BuildingOfficeIcon },
+      { path: '/dealers', name: 'Dealers', icon: UsersIcon },
+      { path: '/vehicle-booking', name: 'Vehicle Booking', icon: ClipboardDocumentCheckIcon },
+      { path: '/sales-monitoring', name: 'Sales Monitoring', icon: ChartBarIcon },
+      { path: '/delivery-tracking', name: 'Delivery Tracking', icon: TruckIcon },
+      { path: '/revenue-analytics', name: 'Revenue Analytics', icon: CurrencyDollarIcon },
+      { path: '/state-wise-sales', name: 'State-wise Sales', icon: MapIcon },
+      { path: '/monthly-performance', name: 'Monthly Performance', icon: ChartBarIcon },
     ];
   };
 

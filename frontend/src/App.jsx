@@ -18,6 +18,15 @@ import { CostAnalysis } from './pages/CostAnalysis';
 import { Reports } from './pages/Reports';
 import { Safety } from './pages/Safety';
 import { AdminAttendance } from './pages/AdminAttendance';
+import { SalesDashboard } from './pages/SalesDashboard';
+import { ShowroomManagement } from './pages/ShowroomManagement';
+import { DealerManagement } from './pages/DealerManagement';
+import { VehicleBooking } from './pages/VehicleBooking';
+import { SalesMonitoring } from './pages/SalesMonitoring';
+import { DeliveryTracking } from './pages/DeliveryTracking';
+import { RevenueAnalytics } from './pages/RevenueAnalytics';
+import { StateWiseSales } from './pages/StateWiseSales';
+import { MonthlyPerformance } from './pages/MonthlyPerformance';
 
 function App() {
   return (
@@ -165,6 +174,72 @@ function App() {
               </ProtectedRoute>
             }
           />
+          {/* Sales Module Routes */}
+<Route path="/sales-dashboard" element={<ProtectedRoute allowedRoles={['admin', 'manager']}><SalesDashboard /></ProtectedRoute>} />
+<Route path="/showrooms" element={<ProtectedRoute allowedRoles={['admin', 'manager']}><ShowroomManagement /></ProtectedRoute>} />
+<Route 
+  path="/dealers" 
+  element={
+    <ProtectedRoute allowedRoles={['admin', 'manager']}>
+      <DealerManagement />
+    </ProtectedRoute>
+  } 
+/>
+
+<Route 
+  path="/vehicle-booking" 
+  element={
+    <ProtectedRoute allowedRoles={['admin', 'manager', 'employee']}>
+      <VehicleBooking />
+    </ProtectedRoute>
+  } 
+/>
+
+<Route 
+  path="/sales-monitoring" 
+  element={
+    <ProtectedRoute allowedRoles={['admin', 'manager']}>
+      <SalesMonitoring />
+    </ProtectedRoute>
+  } 
+/>
+
+<Route 
+  path="/delivery-tracking" 
+  element={
+    <ProtectedRoute allowedRoles={['admin', 'manager']}>
+      <DeliveryTracking />
+    </ProtectedRoute>
+  } 
+/>
+
+<Route 
+  path="/revenue-analytics" 
+  element={
+    <ProtectedRoute allowedRoles={['admin', 'manager']}>
+      <RevenueAnalytics />
+    </ProtectedRoute>
+  } 
+/>
+
+<Route 
+  path="/state-wise-sales" 
+  element={
+    <ProtectedRoute allowedRoles={['admin', 'manager']}>
+      <StateWiseSales />
+    </ProtectedRoute>
+  } 
+/>
+
+<Route 
+  path="/monthly-performance" 
+  element={
+    <ProtectedRoute allowedRoles={['admin', 'manager']}>
+      <MonthlyPerformance />
+    </ProtectedRoute>
+  } 
+/>
+
 
           {/* Catch all */}
           <Route path="*" element={<Navigate to="/login" replace />} />
